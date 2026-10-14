@@ -1,0 +1,75 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { makeMatch } from './harness.js';
+import { PHASE } from '../../shared/constants.js';
+import { validateC2S } from '../../shared/protocol.js';
+const mod = await import('../../server/match/damageBoard.js').catch(() => ({}));
+const row = (ownerId = 'p1', damage = 10, defId = 'op1') => ({ ownerId, defId, name: '同名', kind: 'op', damage, summonDamage: 2 });
+test('server fallback final HP counters are captured before fields are cleared; untrusted history bounded', () => {
+  const h = makeMatch({ humans: 1, bots: 0, fake: true, clientCombat: true, clients: false }).start();
+  h.m.round = 1;
+  h.m.fields = [{ cc: true, mode: 'server', done: true, fieldId: 'n:p_0', kind: 'normal', players: ['p_0'], battle: { damageRows: [row('p_0', 23)] } }];
+  h.m._captureDamage(); h.m.fields = []; h.m.flush(true);
+  assert.equal(h.lastTo('p_0', 'm.damage').total[0].damage, 23);
+  h.m.dispose();
+  const l = new mod.DamageLedger();
+  for (let round = 1; round <= 40; round++) l.replace(round, 'field', { rows: Array.from({ length: 128 }, (_, i) => row('p1', 1, `op_${round}_${i}`)), truncated: false });
+  const v = l.view(41, 'p1');
+  assert.ok(l.base.size <= 4096, 'hostile display IDs cannot grow match memory forever');
+  assert.ok(v.truncated);
+});
+test('server fallback samples displayed field clock, not headless future result', () => {
+  const h = makeMatch({ humans: 1, bots: 0, fake: true, clientCombat: true, clients: false }).start();
+  h.m.round = 1;
+  const f = { cc: true, mode: 'server', done: false, fieldId: 'n:p_0', kind: 'normal', players: ['p_0'], startAt: h.m.sched.now(), spec: { timeLimit: 10 }, timeline: [[0, 0], [3, 2]],
+    damageTimeline: [[0, { rows: [row('p_0', 0)], truncated: false }], [3, { rows: [row('p_0', 23)], truncated: false }]], battle: { damageRows: [row('p_0', 100)] } };
+  h.m.fields = [f]; h.m._captureDamage();
+  assert.equal(h.m.damageLedger.view(1, 'p_0').current[0]?.damage, 0);
+  h.m.fields = []; h.m.dispose();
+});
+test('full-match totals merge ordinary/elite stable operators and new matches start empty', () => {
+  const l = new mod.DamageLedger();
+  l.replace(1, 'normal:n:p1', { rows: [{ ...row('p1', 10, 'normal'), charId: 'char_one' }], truncated: false });
+  l.replace(2, 'normal:n:p1', { rows: [{ ...row('p1', 30, 'elite'), charId: 'char_one' }], truncated: false });
+  const v = l.view(2, 'p1');
+  assert.equal(v.total.length, 1); assert.equal(v.total[0].damage, 40); assert.equal(v.current[0].damage, 30);
+  assert.deepEqual(new mod.DamageLedger().view(1, 'p1').total, []);
+});
+test('absolute field ledger replaces duplicates, adds unite, resets current round and preserves match totals by seat', () => {
+  assert.equal(typeof mod.DamageLedger, 'function', 'match ledger exists');
+  const l = new mod.DamageLedger();
+  l.replace(1, 'normal:n:p1', { rows: [row()], truncated: false });
+  l.replace(1, 'normal:n:p1', { rows: [row('p1', 20)], truncated: false });
+  l.replace(1, 'unite:u', { rows: [row('p1', 5), row('p2', 80)], truncated: false });
+  assert.equal(l.view(1, 'p1').total[0].damage, 25);
+  assert.equal(l.view(1, 'p1').current[0].damage, 25);
+  assert.equal(l.view(1, 'p2').total[0].damage, 80);
+  const next = l.view(2, 'p1');
+  assert.deepEqual(next.current, []);
+  assert.equal(next.total[0].damage, 25);
+  l.replace(1, 'old', { rows: [row('p1', 999)], truncated: false });
+  l.replace(2, 'normal:n:p1', { rows: [row('p1', 7)], truncated: false });
+  assert.equal(l.view(2, 'p1').total[0].damage, 32);
+  assert.equal(l.view(2, 'p1').current[0].damage, 7);
+  assert.equal(l.fields.size, 1, 'past fields compacted rather than growing forever');
+});
+test('client telemetry validates bounded optional payloads, adopts authority only and resyncs own-seat totals', () => {
+  const h = makeMatch({ humans: 2, bots: 0, fake: true, clientCombat: true, clients: false }).start();
+  h.toPrep(1);
+  h.m.handle('p_0', { t: 'g.ready', ready: true }); h.m.handle('p_1', { t: 'g.ready', ready: true });
+  h.run(() => h.m.phase === PHASE.COMBAT);
+  const f = h.m.fields.find((f) => f.authority === 'p_0');
+  const packet = { rows: [row('p_0', 12)], truncated: false };
+  const msg = { t: 'b.progress', battleId: f.battleId, gt: 1, killed: 0, total: 1, damage: packet };
+  assert.equal(validateC2S(msg), null);
+  assert.ok(validateC2S({ ...msg, damage: { ...packet, rows: Array(129).fill(row()) } }), 'oversized telemetry rejected');
+  assert.ok(validateC2S({ ...msg, damage: { ...packet, rows: [row('p_0', -1)] } }), 'negative rejected');
+  h.m.handle('p_1', msg); h.m.flush(true);
+  assert.equal(h.lastTo('p_0', 'm.damage')?.total.length, 0, 'other authority ignored');
+  h.m.handle('p_0', msg); h.m.flush(true);
+  assert.equal(h.lastTo('p_0', 'm.damage').total[0].damage, 12);
+  assert.equal(h.lastTo('p_1', 'm.damage').total.length, 0, 'no unrelated field data');
+  h.m.handle('p_0', msg); h.m.onReconnect('p_0');
+  assert.equal(h.lastTo('p_0', 'm.damage').total[0].damage, 12, 'resync is replacement');
+  h.m.dispose();
+});

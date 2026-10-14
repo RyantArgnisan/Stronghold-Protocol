@@ -1,0 +1,7 @@
+FROM stronghold-protocol:0.2.3-local.3-upload-confirm
+COPY --chown=node:node public/js/main.js /app/public/js/main.js
+COPY --chown=node:node public/js/ui/cloudSave.js public/js/ui/cloudSavePanel.js public/js/ui/autoCloudSave.js public/js/ui/stats.js /app/public/js/ui/
+COPY --chown=node:node shared/statsRecords.js /app/shared/statsRecords.js
+COPY --chown=node:node server/cloudSave.js /app/server/cloudSave.js
+COPY --chown=node:node public/i18n/en.json public/i18n/ja.json public/i18n/ko.json public/i18n/zh-TW.json /app/public/i18n/
+COPY --chown=node:node docs/CLOUD-SAVE-LOCAL.md /app/docs/CLOUD-SAVE-LOCAL.md

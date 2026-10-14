@@ -1,0 +1,57 @@
+/* Plain-text room chat; pixel-sized text remains readable on the game's rem-scaled mobile HUD. */
+.chat { position: fixed; left: max(.24rem, env(safe-area-inset-left)); bottom: max(.24rem, env(safe-area-inset-bottom)); z-index: 65; max-width: calc(100vw - 24px); font-size: 14px; line-height: 1.45; color: var(--text-hi); }
+.chat button:not([class*="ewheel__"]) { padding: 7px 12px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--text-hi); font: inherit; cursor: pointer; min-height: 36px; }
+.chat button:disabled { opacity: .5; cursor: default; }
+.chat button:focus-visible, .chat__input:focus-visible { outline: 2px solid var(--mint-500); outline-offset: 2px; }
+.chat__toggle { box-shadow: 0 2px 12px #0008; }
+.chat__unread { position: absolute; right: -8px; top: -10px; padding: 3px 6px; border-radius: 8px; background: var(--bg-1); border: 1px solid var(--mint-700); color: var(--mint-400); font-size: 11px; letter-spacing: 0; white-space: nowrap; }
+.chat__body { position: absolute; left: 0; bottom: calc(100% + 8px); width: min(350px, calc(100vw - max(.24rem, env(safe-area-inset-left)) - 12px)); display: flex; flex-direction: column; max-height: min(440px, calc(100dvh - max(.24rem, env(safe-area-inset-bottom)) - 72px)); background: var(--bg-1); border: 1px solid var(--line-2); box-shadow: 0 4px 20px #000b; transform-origin: 24px 100%; animation: emo-panel-in 160ms var(--ease-out); }
+.chat__tabs { display: flex; gap: 4px; padding: 4px 10px; flex-shrink: 0; }
+.chat__tabs button { flex: 1; }
+.chat__tabs button[aria-selected="true"] { color: var(--mint-400); border-color: var(--mint-700); }
+.chat__text-panel { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.chat__emotes { padding: 6px 0; overflow-y: auto; overscroll-behavior: contain; }
+/* Same official 313×231 geometry, but readable independent of game HUD rem scaling. */
+.chat .ewheel--embedded { --emo-unit: min(70px, calc((100vw - 36px) / 3.13)); width: calc(3.13 * var(--emo-unit)); margin: 0 auto; }
+.ewheel--embedded .ewheel__panel { position: relative; left: 0; bottom: auto; width: calc(3.13 * var(--emo-unit)); height: calc(2.31 * var(--emo-unit)); animation: none; scale: 1; }
+.ewheel--embedded .ewheel__panel::before { left: calc(.15 * var(--emo-unit)); top: calc(.13 * var(--emo-unit)); width: calc(2.82 * var(--emo-unit)); height: calc(1.99 * var(--emo-unit)); }
+.ewheel--embedded .ewheel__viewport { left: calc(.205 * var(--emo-unit)); top: calc(.19 * var(--emo-unit)); width: calc(2.71 * var(--emo-unit)); height: calc(1.78 * var(--emo-unit)); }
+.ewheel--embedded .ewheel__page { grid-template-columns: repeat(3, calc(.85 * var(--emo-unit))); grid-auto-rows: calc(.85 * var(--emo-unit)); gap: calc(.08 * var(--emo-unit)); }
+.ewheel--embedded .ewheel__item { width: calc(.85 * var(--emo-unit)); height: calc(.85 * var(--emo-unit)); padding: calc(.07 * var(--emo-unit)); }
+.ewheel--embedded .ewheel__dots { left: calc(.15 * var(--emo-unit)); top: calc(1.99 * var(--emo-unit)); width: calc(2.82 * var(--emo-unit)); height: calc(.12 * var(--emo-unit)); gap: calc(.1 * var(--emo-unit)); }
+.ewheel--embedded .ewheel__dot { width: calc(.11 * var(--emo-unit)); height: calc(.12 * var(--emo-unit)); }
+/* Keep reduced pager hits below the cells; rem-sized touch expansion must not cover adjacent dots. */
+.chat .ewheel--embedded .ewheel__dot::before { inset: 0 calc(-.04 * var(--emo-unit)) calc(-.1 * var(--emo-unit)); width: auto; height: auto; transform: none; }
+.ewheel--embedded .ewheel__nav { top: calc(1.99 * var(--emo-unit)); width: calc(.26 * var(--emo-unit)); height: calc(.22 * var(--emo-unit)); }
+.ewheel--embedded .ewheel__nav.is-prev { left: calc(.7 * var(--emo-unit)); }
+.ewheel--embedded .ewheel__nav.is-next { right: calc(.7 * var(--emo-unit)); }
+.ewheel--embedded .ewheel__nav .icon { width: calc(.18 * var(--emo-unit)); height: calc(.18 * var(--emo-unit)); }
+/* Leave the original gear/guide/fullscreen controls next to the sole global entry. */
+.gm__corner { left: calc(max(.24rem, env(safe-area-inset-left)) + max(1.51rem, 96px) + .1rem); }
+.chat__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 10px; color: var(--text-lo); font-size: 12px; flex-shrink: 0; }
+.chat__head .chat__close { padding: 4px 8px; }
+.chat__log { list-style: none; margin: 0; padding: 10px; min-height: 70px; overflow-y: auto; overscroll-behavior: contain; flex: 1 1 210px; }
+.chat__message { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 7px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.chat__seat { font-weight: 700; color: hsl(var(--seat-hue) 70% 70%); }
+.chat__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-md); }
+.chat__text { grid-column: 1 / -1; overflow-wrap: anywhere; white-space: pre-wrap; user-select: text; }
+.chat__empty { color: var(--text-lo); }
+.chat__notice, .chat__error { padding: 4px 10px; margin: 0; font-size: 12px; flex-shrink: 0; }
+.chat__notice { color: var(--text-lo); }
+.chat__error, .chat__hint.is-invalid { color: var(--red-premium); }
+.chat__moderation { padding: 6px 10px; border-top: 1px solid var(--line); flex-shrink: 0; font-size: 12px; }
+.chat__moderation summary { cursor: pointer; color: var(--text-md); min-height: 28px; }
+.chat__moderation ul { list-style: none; margin: 0; padding: 0; max-height: 120px; overflow-y: auto; overscroll-behavior: contain; }
+.chat__moderation li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 3px 0; }
+.chat__moderation .chat__mute { padding: 4px 8px; white-space: nowrap; }
+.chat__form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; padding: 10px; border-top: 1px solid var(--line); flex-shrink: 0; }
+.chat__input { width: 100%; min-height: 44px; resize: none; font: inherit; background: var(--bg-0); color: var(--text-hi); border: 1px solid var(--line-2); padding: 6px; user-select: text; }
+.chat__hint { grid-column: 1 / -1; font-size: 11px; color: var(--text-lo); }
+@media (max-width: 700px) {
+  .chat { max-width: calc(100vw - 16px); }
+  .chat__input { font-size: 16px; }
+}
+@media (max-height: 500px) {
+  .chat__body { max-height: calc(100dvh - max(.24rem, env(safe-area-inset-bottom)) - 60px); }
+}
+@media (prefers-reduced-motion: reduce) { .chat__body { animation: none; } }

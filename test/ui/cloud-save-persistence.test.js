@@ -1,0 +1,56 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import * as cloud from '../../public/js/ui/cloudSave.js';
+const storage = () => { const m = new Map(); return { getItem: k => m.get(k) ?? null, setItem: (k,v) => m.set(k,v), removeItem: k => m.delete(k), m }; };
+const tick = () => new Promise(r => setTimeout(r, 5));
+test('refresh resumes authenticated token, not password/history; new-record timestamp and identity boundaries are enforced', async () => {
+ assert.equal(typeof cloud.createPersistentCloudUpload, 'function');
+ const s = storage(), calls = []; let identity = { name: 'fixture', key: 'fixture/p' };
+ const request = async (action, fields) => { calls.push({ action, fields }); return { token: 'a'.repeat(64), auto: { enabled: true, enabledAt: 100 }, updatedAt: 'now' }; };
+ const a = cloud.createPersistentCloudUpload({ getIdentity: () => identity, storage: s, request });
+ await a.enable('fixture-password', async () => true);
+ assert.equal(a.get().enabledAt, 100);
+ assert.ok(!JSON.stringify([...s.m]).includes('fixture-password'));
+ a.enqueue({ id: 'old', t: 99 }); a.enqueue({ id: 'new', t: 101 }); a.enqueue({ id: 'new', t: 101 }); await tick();
+ assert.deepEqual(calls.filter(c => c.action === 'append').map(c => c.fields.records[0].id), ['new']);
+ const b = cloud.createPersistentCloudUpload({ getIdentity: () => identity, storage: s, request });
+ await b.resume(); assert.equal(b.get().enabled, true); assert.equal(b.get().enabledAt, 100);
+ assert.equal(calls.at(-1).action, 'state'); assert.equal(calls.at(-1).fields.password, undefined);
+ identity = { name: 'other', key: 'other/q' }; await b.identityChanged();
+ b.enqueue({ id: 'foreign', t: 102 }); await tick(); assert.equal(b.get().enabled, false);
+ assert.ok(calls.some(c => c.action === 'revoke'));
+});
+test('authenticated cloud refresh merges on demand without local loss, history upload, or record notifications', async () => {
+ assert.equal(typeof cloud.mergeCloudStats, 'function');
+ const s = storage();
+ const local = { id: 'local', t: 9, players: [{ playerId: 'p', name: 'keep-me' }] };
+ s.setItem('sp.pref.stats', JSON.stringify({ v: 1, records: [local] }));
+ const incoming = { v: 1, records: [{ id: 'cloud', t: 10, players: [{ playerId: 'q' }] }, { ...local, players: [{ playerId: 'wrong' }] }] };
+ await cloud.mergeCloudStats(incoming, s);
+ const records = JSON.parse(s.getItem('sp.pref.stats')).records;
+ assert.deepEqual(records.map(r => r.id), ['cloud', 'local']);
+ assert.deepEqual(records[1], local, 'existing local duplicate wins without normalization loss');
+ const before = s.getItem('sp.pref.stats'); await cloud.mergeCloudStats(incoming, s); assert.equal(s.getItem('sp.pref.stats'), before);
+ s.setItem('sp.pref.stats', JSON.stringify({ v: 2, records: [] }));
+ await assert.rejects(cloud.mergeCloudStats(incoming, s), /INVALID/);
+ assert.equal(JSON.parse(s.getItem('sp.pref.stats')).v, 2);
+});
+test('controller refresh reads cloud even when automatic upload is off and drops stale identity responses', async () => {
+ const s = storage(); let identity = { name: 'fixture', key: 'p' }, resolve;
+ s.setItem('sp.cloud.auth.fixture', JSON.stringify({ v: 1, token: 'b'.repeat(64), queue: [] }));
+ const calls = [];
+ const a = cloud.createPersistentCloudUpload({ getIdentity: () => identity, storage: s, request: async (action, fields) => {
+  calls.push({ action, fields });
+  if (action === 'read') return new Promise(r => { resolve = r; });
+  return { auto: { enabled: false, enabledAt: null } };
+ } });
+ await a.resume(); assert.equal(a.get().authorized, true); assert.equal(a.get().enabled, false);
+ assert.equal(typeof a.refreshStats, 'function');
+ const refresh = a.refreshStats(); await tick();
+ resolve({ auto: { enabled: false, enabledAt: null }, stats: { v: 1, records: [{ id: 'cloud', t: 2, players: [{ playerId: 'p' }] }] } });
+ assert.equal(await refresh, true); assert.equal(JSON.parse(s.getItem('sp.pref.stats')).records[0].id, 'cloud');
+ assert.ok(!calls.some(c => c.action === 'append'));
+ const stale = a.refreshStats(); await tick(); identity = { name: 'other', key: 'q' }; await a.identityChanged();
+ resolve({ auto: { enabled: true, enabledAt: 1 }, stats: { v: 1, records: [{ id: 'stale', t: 3, players: [{ playerId: 'p' }] }] } });
+ assert.equal(await stale, false); assert.ok(!s.getItem('sp.pref.stats').includes('stale'));
+});

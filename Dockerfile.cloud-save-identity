@@ -1,0 +1,5 @@
+# Minimal immutable overlay; retain all deployed gameplay/assets/dependencies.
+FROM stronghold-protocol:0.2.3-local.3-cloudsave
+COPY --chown=node:node shared/cloudSave.js /app/shared/cloudSave.js
+COPY --chown=node:node public/js/ui/cloudSave.js public/js/ui/cloudSavePanel.js /app/public/js/ui/
+COPY --chown=node:node public/i18n/en.json public/i18n/ja.json public/i18n/ko.json public/i18n/zh-TW.json /app/public/i18n/

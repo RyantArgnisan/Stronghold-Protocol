@@ -1,0 +1,24 @@
+{
+  "toolkit_root": "/home/ryant/Stronghold-Protocol-Lele-Mods",
+  "toolkit_commit": "a728f3a8a3e783f8210a421bb7c74ea22dbc709d",
+  "generated_source_root": "/home/ryant/Stronghold-Protocol-Lele-Mods/state/stages/pi-022-20261010/source",
+  "source_upstream_commit": "62eb113419123d9a3a63606107bbf85230c5dd2f",
+  "upstream_version": "0.2.2",
+  "rhine_repository": "YUYUYUYUYUYUYUTOUA/Stronghold-Protocol-Rhine",
+  "rhine_commit": "1d20c21a3a18519ab2965d15bc8e952c0e51ad99",
+  "aphris_repository": "SrC2O4/Stronghold-Protocol",
+  "aphris_commit": "c76a81fb5cd8ca5bb360ff10f834cc9a166b0c88",
+  "adapted_to_0_2_3": false,
+  "runnable_game": false,
+  "excluded": [
+    "Kazdel members/ghosts/cannon",
+    "Wuhoo",
+    "Eunectes",
+    "extra 4 rounds",
+    "other operator packs",
+    "relics",
+    "targeted recruitment",
+    "lucky mode",
+    "damage statistics replacement"
+  ]
+}

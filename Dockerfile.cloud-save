@@ -1,0 +1,10 @@
+# Immutable overlay: preserve the exact deployed local fork and all its assets/features.
+FROM stronghold-protocol:0.2.3-local.3-layoutfix
+COPY --chown=node:node server/index.js /app/server/index.js
+COPY --chown=node:node server/http/routes.js /app/server/http/routes.js
+COPY --chown=node:node server/cloudSave.js /app/server/cloudSave.js
+COPY --chown=node:node shared/cloudSave.js /app/shared/cloudSave.js
+COPY --chown=node:node public/js/screens/stats.js /app/public/js/screens/stats.js
+COPY --chown=node:node public/js/ui/cloudSave.js /app/public/js/ui/cloudSave.js
+COPY --chown=node:node public/js/ui/cloudSavePanel.js /app/public/js/ui/cloudSavePanel.js
+COPY --chown=node:node public/i18n/en.json public/i18n/ja.json public/i18n/ko.json public/i18n/zh-TW.json /app/public/i18n/

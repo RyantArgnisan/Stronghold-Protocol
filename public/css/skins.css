@@ -1,0 +1,11 @@
+/* Skin choices use only prevalidated offline resources. */
+.skin-picker { display:grid; grid-template-columns:repeat(auto-fit,minmax(1.35rem,1fr)); gap:.08rem; margin:.12rem 0 .18rem; }
+.skin-option { border:1px solid var(--line,#485259); border-radius:.06rem; background:rgba(20,27,30,.9); color:inherit; padding:.08rem; text-align:left; min-height:.68rem; display:grid; grid-template-columns:.40rem 1fr; gap:.04rem .07rem; align-items:center; }
+.skin-option img { width:.40rem; height:.40rem; object-fit:contain; grid-row:span 3; }
+.skin-option b { font-size:calc(.13 * var(--t)); }
+.skin-option small,.skin-option span { font-size:calc(.10 * var(--t)); opacity:.7; }
+.skin-option.is-on { border-color:#74d9d2; box-shadow:inset 0 0 0 1px #74d9d2; }
+.skin-option:disabled { opacity:.45; cursor:not-allowed; }
+.skin-option:disabled.is-on { opacity:.75; }
+.diy-slot .skin-picker { grid-template-columns:repeat(2,minmax(0,1fr)); }
+@media(max-width:600px) { .skin-picker { grid-template-columns:repeat(2,minmax(0,1fr)); } .skin-option { min-height:48px; } }

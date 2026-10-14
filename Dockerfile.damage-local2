@@ -1,0 +1,10 @@
+# Immutable local feature overlay; unchanged dependencies from verified local.1 ARM64 image.
+FROM stronghold-protocol:backup-damage-local2
+WORKDIR /app
+COPY package.json ./package.json
+COPY server ./server
+COPY shared ./shared
+COPY public/js ./public/js
+COPY public/css ./public/css
+COPY public/index.html ./public/index.html
+USER node

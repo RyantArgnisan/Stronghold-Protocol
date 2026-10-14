@@ -1,0 +1,12 @@
+# Pure reviewed Rhine overlay on the exact retained customized local.2 image.
+# Source GPL-3.0-or-later; game art remains subject to NOTICE.md.
+FROM stronghold-protocol:0.2.3-local.2
+USER root
+COPY package.json package-lock.json /app/
+COPY shared /app/shared
+COPY server /app/server
+COPY data /app/data
+COPY public /app/public
+COPY docs/rhine-sources /app/docs/rhine-sources
+COPY LICENSE NOTICE.md /app/
+USER node
