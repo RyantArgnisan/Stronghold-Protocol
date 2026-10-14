@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-const { parseHTML } = createRequire(import.meta.url)(process.env.SP_DOM_MODULE);
+const { parseHTML } = createRequire(import.meta.url)(process.env.SP_DOM_MODULE || 'linkedom');
 const { window, document } = parseHTML('<html><body></body></html>');
 Object.assign(globalThis, { window, document, Element: window.Element, getComputedStyle: () => ({ visibility: 'visible' }) });
 window.Element.prototype.getClientRects = () => [{}];

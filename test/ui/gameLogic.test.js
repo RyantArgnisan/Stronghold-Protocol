@@ -581,7 +581,11 @@ describe('drafts', () => {
     const sp2 = normalizeSp({ cards: [{}, {}], order: ['b', 'a'], turn: 0, picks: [{ playerId: 'b', idx: 1 }, { playerId: 'x', idx: 9 }] }, players);
     assert.equal(sp2.turnPid, 'b'); assert.equal(sp2.cards[1].takenBy, 'b'); assert.equal(sp2.pickOf.has('x'), false);
     assert.equal(normalizeSp(null), null);
-    assert.equal(normalizeSp({ cards: new Array(9).fill({}) }).cards.length, 6, 'at most 6 cards');
+    assert.equal(normalizeSp({ cards: new Array(9).fill({}) }).cards.length, 9, 'retain extended-party draft slots');
+    assert.equal(normalizeSp({ cards: new Array(11).fill({}), picks: { a: 9, b: 10 } }).cards.length, 10, 'at most ten cards');
+    const extended = normalizeSp({ cards: new Array(11).fill({}), picks: { a: 9, b: 10 } });
+    assert.equal(extended.cards[9].takenBy, 'a', 'tenth slot remains pickable');
+    assert.equal(extended.pickOf.has('b'), false, 'out-of-range pick rejected');
   });
   test('personal choice: only the living recipient in the current PREP, independent of the public draft', () => {
     const pub = { phase: PHASE.PREP, round: 14, sp: { family: 'supply', cards: ['global'] } };
