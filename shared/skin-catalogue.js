@@ -1898,4 +1898,4 @@ export const SKIN_CATALOGUE = Object.freeze([
     "group": "珊瑚海岸/XXII",
     "stem": "char_498_inside_summer_22"
   }
-].map(Object.freeze));
+].map((skin) => Object.freeze(skin)));

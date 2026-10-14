@@ -1080,7 +1080,6 @@ export async function createFieldView(host, options = {}) {
    */
   function drawHighlight(list, style, group) {
     const key = hlKey(style, group);
-    if (style?.circle) style = { ...style, circle: circleToDisp(mode === 'prep' ? prepXf : IDENTITY, style.circle) };
     const range = RANGE_GROUPS.has(key) || style === 'range';
     let t = tilesToDisp(IDENTITY, list);
     if (range && !style?.researchRange) t = t.filter(([r]) => r !== GEO.HAND_ROW && r !== GEO.TEMP_ROW);

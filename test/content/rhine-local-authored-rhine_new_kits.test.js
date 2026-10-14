@@ -88,6 +88,22 @@ test('Dorothy: automatic deployment makes two free traps; hostile ground cells a
   cast(u); assert.equal(traps(h).length, 2); valid(h);
 });
 
+test('Dorothy placement uses deterministic distance for empty fields and approaching enemies', () => {
+  const originalHypot = Math.hypot;
+  try {
+    Math.hypot = () => { throw new Error('engine-approximated distance used in trap placement'); };
+    const h = run('dorothy'), u = h.unit('owner');
+    assert.equal(traps(h).length, 2, 'empty-field deployment still places free traps');
+    h.spawn('e', { pos: [10, 7] });
+    for (const t of traps(h)) h.b.retreat(t, { reason: 'test', permanent: true });
+    cast(u);
+    assert.ok(traps(h).length > 0, 'replenishment can rank cells near an enemy');
+    valid(h);
+  } finally {
+    Math.hypot = originalHypot;
+  }
+});
+
 for (const skillIndex of [0, 1, 2]) test(`Dorothy S${skillIndex + 1}: native damage/status, Dreamer timing, and one research gain for multi-hit trap`, () => {
   const h = run('dorothy', { bonds: { rhineShip: { ...active } },
     units: [{ chessId: cid('dorothy'), uid: 'owner', row: 10, col: 4, skillIndex }] });

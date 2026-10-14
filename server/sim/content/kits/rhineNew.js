@@ -6,6 +6,7 @@ import { absoluteRangeKeys } from '../../targeting.js';
 import { bodyOnTile, bodyInKeys, bodyInRadius } from '../../body.js';
 import { COLS, CHAIN_RADIUS } from '../../constants.js';
 import { localOrder } from '../../dir.js';
+import { hypot } from '../../detmath.js';
 
 export const RESONATOR = 'token_10025_doroth_recttp';
 const A1 = 'skchr_halo_1', A2 = 'skchr_halo_2';
@@ -133,7 +134,7 @@ function trapTile(b, u) {
     const r = Math.floor(key / COLS), c = key % COLS;
     if (!b.grid.canStand(r, c) || b.grid.isObstacle(r, c) || b.isReservedTile(r, c) || groundOn(b, r, c)) continue;
     const [lr, lc] = localOrder(r - u.tileR, c - u.tileC, u.dir);
-    const distance = enemies.length ? Math.min(...enemies.map(e => Math.hypot(e.x - c, e.y - r))) : Math.hypot(u.x - c, u.y - r);
+    const distance = enemies.length ? Math.min(...enemies.map(e => hypot(e.x - c, e.y - r))) : hypot(u.x - c, u.y - r);
     candidates.push({ r, c, distance, lr, lc });
   }
   candidates.sort((a, c) => a.distance - c.distance || a.lr - c.lr || a.lc - c.lc);

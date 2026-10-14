@@ -146,6 +146,7 @@ export function loadoutOptions(base, golden = null) {
  */
 export function checkLoadout(entries, getChess) {
   if (!isLoadoutEntries(entries)) return { error: 'BAD_MSG', detail: 'bad loadout entries' };
+  /** @type {Record<string, { skill: number, module: string|null }>} */
   const out = {};
   for (const id of Object.keys(entries)) {
     const e = entries[id];
@@ -223,6 +224,7 @@ export function cultivationCharIds(chess, backups = null) {
 export function checkLoadoutOps(ops, isOperator) {
   if (ops == null) return { ok: true, ops: {} };
   if (!isLoadoutOps(ops)) return { error: 'BAD_MSG', detail: 'bad operator settings' };
+  /** @type {Record<string, { potential: number, cultivate: number }>} */
   const out = {};
   for (const id of Object.keys(ops)) {
     if (typeof isOperator !== 'function' || !isOperator(id)) return { error: 'BAD_TARGET', detail: `unknown operator ${id}` };
@@ -340,17 +342,18 @@ const statView = (x) => ({
  * target-selection grid (the sim's `unit.liveRangeGrid`, Battle._refreshRange; community report E1 after 0.1.0: 烛煌
  * S3's 4-11 never reached the card). `dir`: the unit's facing now (UP / RIGHT / DOWN / LEFT; UnitInfo.dir is the facing
  * at send time and the snapshot tuples carry none) — the detail card's range overlay rotates by it (GitHub PR #281).
- * @param {{ id?: number, uid?: number|null, defId?: string, hp?: number, alive?: boolean, base?: any, liveRangeGrid?: any, dir?: string } | null} u
+ * @param {{ id?: number, uid?: number|null, defId?: string, hp?: number, alive?: boolean, base?: any, cultMul?: any, side?: string, liveRangeGrid?: any, dir?: string } | null} u
  * @param {any} [s] aggregated stats (missing ⇒ the base)
  * @returns {{ id: number|null, uid: number|null, defId: string|null, hp: number, alive: boolean, maxHp: number, atk: number,
  *   def: number, res: number, interval: number|null, blockCnt: number, moveSpeed: number,
  *   base: { maxHp: number, atk: number, def: number, res: number, interval: number|null, blockCnt: number, moveSpeed: number },
- *   range?: Array<[number, number]>, dir?: string }}
+ *   range?: Array<[number, number]>, dir?: string, silenced: boolean }}
  */
 export function unitStatsEntry(u, s = null) {
   const own = u && u.base && typeof u.base === 'object' ? u.base : {};
   const base = u && u.cultMul ? cultivatedStats(own, u.cultMul) : own;
   const cur = s && typeof s === 'object' ? s : base;
+  /** @type {Array<[number, number]>|null} */
   const range = u?.side !== 'enemy' && Array.isArray(u?.liveRangeGrid)
     ? u.liveRangeGrid.filter((p) => Array.isArray(p) && Number.isInteger(p[0]) && Number.isInteger(p[1])).map((p) => [p[0], p[1]])
     : null;
@@ -381,7 +384,7 @@ const target = (v) => {
   return false;
 };
 
-/** @type {Record<string, Record<string, (v:any)=>boolean> & { $optional?: string[] }>} */
+/** @type {Record<string, { [key: string]: ((v:any)=>boolean)|string[], $optional?: string[] }>} */
 export const C2S = {
   // session & lobby
   hello: { name: (v) => isStr(v, NAME_MAX_LEN) && v.trim().length > 0, token: (v) => v == null || isStr(v, 64), version: (v) => v == null || isInt(v, 0, 1e6),
@@ -514,7 +517,8 @@ export function validateC2S(msg) {
     if (k === '$optional') continue;
     const v = msg[k];
     if (v === undefined && optional.includes(k)) continue;
-    if (!check(v)) return `bad field ${k}`;
+    // $optional is the only metadata array and was skipped above; every other entry is a checker.
+    if (!(/** @type {(v:any)=>boolean} */ (check))(v)) return `bad field ${k}`;
   }
   if (msg.t === 'room.create' && msg.capacity !== undefined &&
       (msg.mode === 'solo' ? msg.capacity !== 1 : msg.capacity < 4)) return 'bad field capacity';
