@@ -1,7 +1,7 @@
 # DESIGN §6, §16 — The match and meta engine (server/match), operator loadouts
 
 Part of [DESIGN.md](../DESIGN.md) (the index; section numbers are global).
-Local build `0.2.2-local.1` extends parties beyond four: DESIGN §28 governs occupied-seat pool scaling, up-to-ten-slot special drafts, eight-player per-player Boss HP and the prep-frozen hidden threshold. These local extensions override only the relevant four-player caps below; solo and 1–4-player RNG/compatibility paths remain unchanged.
+Local build `0.2.2-local.1` extends parties beyond four: DESIGN §31 governs occupied-seat pool scaling, up-to-ten-slot special drafts, eight-player per-player Boss HP and the prep-frozen hidden threshold. These local extensions override only the relevant four-player caps below; solo and 1–4-player RNG/compatibility paths remain unchanged.
 
 ## 6. Match & meta (server/match)
 

@@ -6,6 +6,7 @@ import { bossPoolHp, hiddenEligible, pairPlayers } from '../../server/match/fina
 import { validateC2S } from '../../shared/protocol.js';
 import { SimClient } from './simClient.js';
 import { attachAudit } from '../../server/match/audit.js';
+import { createRng, deriveSeed } from '../../server/sim/rng.js';
 
 test('eight-player matches expand the shared chess pool using actual occupied seats', () => {
   const h = makeMatch({ humans: 8, seed: 718 });
@@ -64,7 +65,7 @@ for (const humans of [4, 5, 6, 7, 8]) {
       assert.deepEqual(audit.violations, []);
       assert.deepEqual(h.logs.error, []);
       for (const ps of h.m.order) assert.ok(h.lastTo(ps.playerId, 'm.result'), ps.playerId);
-      const groups = pairPlayers(h.m.order);
+      const groups = pairPlayers(h.m.order, createRng(deriveSeed(h.m.seed, 'boss-pairs')), h.m.bossPairs);
       assert.equal(groups.length, Math.ceil(humans / 2));
       assert.equal(new Set(groups.flat().map((p) => p.playerId)).size, humans);
     } finally {

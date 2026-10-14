@@ -30,6 +30,14 @@ function readBody(req) {
   });
 }
 
+// Windows cannot open/fsync directory descriptors through Node's regular file API.
+// The temporary file is still fsynced before atomic rename on every platform.
+export async function syncCloudSaveDirectory(dir, { platform = process.platform, openDirectory = open } = {}) {
+  if (platform === 'win32') return;
+  const directory = await openDirectory(dir, 'r');
+  try { await directory.sync(); } finally { await directory.close(); }
+}
+
 export function createCloudSaveHandler({ dir, rate = 30 }) {
   let queue = Promise.resolve(), active = 0;
   const attempts = new Map();
@@ -87,8 +95,7 @@ export function createCloudSaveHandler({ dir, rate = 30 }) {
             const handle = await open(temporary, 'wx', 0o600);
             try { await handle.writeFile(JSON.stringify(record)); await handle.sync(); } finally { await handle.close(); }
             await rename(temporary, file);
-            const directory = await open(dir, 'r');
-            try { await directory.sync(); } finally { await directory.close(); }
+            await syncCloudSaveDirectory(dir);
           } finally { await unlink(temporary).catch(() => {}); }
         };
         if (['authorize', 'state', 'settings', 'read', 'revoke'].includes(action)) {

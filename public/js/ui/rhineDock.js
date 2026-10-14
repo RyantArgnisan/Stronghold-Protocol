@@ -1,4 +1,4 @@
-import { t } from '../../../shared/i18n.js';
+import { t, N_ } from '../../../shared/i18n.js';
 import { useEffect, useState } from '../../vendor/hooks.module.js';
 import { html } from './components.js';
 import { boardTargets } from './gameLogic.js';
@@ -125,7 +125,7 @@ export function RhineDock({ research, editable, view, placeCtx, onDeploy, onReca
       return html`<article key=${def.key} class=${`rhine-card${armed === uid && uid != null ? ' is-armed' : ''}${status.onBoard ? ' is-deployed' : ''}${unlocked ? '' : ' is-locked'}`} style=${`--research-color:${def.color}`} data-research=${def.key}>
         <button type="button" class="rhine-card__select" disabled=${!canDeploy} aria-label=${t('部署{name}', { name: t(def.name) })} title=${t(def.description)}
           onPointerDown=${() => { if (canDeploy) setArmed(uid); }} onClick=${() => { if (canDeploy) setArmed(uid); }}>
-          <img src=${def.sprite || def.icon} alt="" draggable="false" /><strong>${t(def.name)}</strong><small>${laser ? (unlocked ? t('单级 · 9莱茵生命') : t('9莱茵生命解锁')) : t(['原型', '改良型', '成熟型'][stage])}</small>
+          <img src=${def.sprite || def.icon} alt="" draggable="false" /><strong>${t(def.name)}</strong><small>${laser ? (unlocked ? t('单级 · 9莱茵生命') : t('9莱茵生命解锁')) : t([N_('原型'), N_('改良型'), N_('成熟型')][stage])}</small>
         </button>
         <div class="rhine-card__stats">${t('攻击')} ${Math.round(status.attack ?? rhineAttack(research.layers))}${status.onBoard ? t(' · 已部署') : ''}</div>
         <div class="rhine-card__range" title=${researchRangeText({id:def.tokenId,stage})}>${researchRangeSummary({id:def.tokenId,stage})}</div>

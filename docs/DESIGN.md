@@ -37,6 +37,6 @@ normative lines it rewrote).
 | §26 | [history/0.2.1.md](history/0.2.1.md) | 0.2.1 — after the 0.2.0 release |
 | §27 | [history/0.2.2.md](history/0.2.2.md) | 0.2.2 — after the 0.2.1 release (2026-10-09) |
 | §28 | [history/0.2.3.md](history/0.2.3.md) | 0.2.3 — after the 0.2.2 release (2026-10-10) |
-| Local | [history/0.2.2-local.1.md](history/0.2.2-local.1.md) | Local extension — eight-player rooms and text chat (not upstream/official rules) |
+| §31 | [history/0.2.2-local.1.md](history/0.2.2-local.1.md) | Local extension — eight-player rooms and text chat (not upstream/official rules) |
 | §29 | [history/0.2.4.md](history/0.2.4.md) | 0.2.4 — after the 0.2.3 release (2026-10-11) |
 | §30 | [history/0.2.5.md](history/0.2.5.md) | 0.2.5 — after the 0.2.4 release (2026-10-12) |

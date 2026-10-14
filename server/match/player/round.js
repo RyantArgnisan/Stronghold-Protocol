@@ -135,6 +135,7 @@ export class PlayerRound {
         units.push(u);
       }
     }
+    const research = this.researchView();
     return {
       playerId: this.playerId,
       seat: this.seat,
@@ -147,7 +148,10 @@ export class PlayerRound {
         id: e.id, key: e.key ?? null, source: e.iconKind ?? null, params: e.params ?? null, counter: e.counter ?? null, data: e.data ?? null,
       })),
       deviceOverrides: { ...this.deviceOverrides },
-      research: this.researchView(),
+      // Replicas need only deployed device identity/stage. Reserve pieces and research
+      // progress belong exclusively to the owner's private preparation view.
+      research: { active: research.active, devices: research.devices
+        .filter((d) => d.onBoard).map(({ key, tokenId, uid, stage }) => ({ key, tokenId, uid, stage, onBoard: true })) },
     };
   }
 }

@@ -4,7 +4,8 @@
 // registers exactly the kit of the stand-in character whose charId has that code name (data/backups.json `units`); a
 // 自选 file `op-<codename>.js` registers exactly the kit of the owned-6★ pick with that code name (data/backups.json
 // `diy.ownedPool`) and writes every skill of the operator under `skills`; the registry is the tier groups in order, then
-// the stand-ins, then the 自选 operators, and content/index.js serves that object; KITTED_CHARS = the 预备干员 + every
+// the stand-ins, then the 自选 operators; content/index.js retains those builders plus explicit Rhine extensions;
+// KITTED_CHARS = the 预备干员 + every
 // registered stand-in / operator charId; no kit file imports a Node-only or server-only module or reads the clock /
 // Math.random (the sim is deterministic and also runs in the browser, /sim/).
 import { test } from 'node:test';
@@ -14,6 +15,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { KIT_FILES, TIER_KITS, KITS, STANDIN_KIT_FILES, STANDIN_KITS, OPERATOR_KIT_FILES, OPERATOR_KITS, GENERIC_KIT_CHARS, KITTED_CHARS } from '../../server/sim/content/kits/index.js';
 import { KITS as CONTENT_KITS } from '../../server/sim/content/index.js';
+import { kits as RHINE_KITS } from '../../server/sim/content/kits/rhinePure.js';
 import { diyRecord } from '../../shared/diy.js';
 import { normalizeChess } from '../../server/sim/simdata.js';
 
@@ -85,10 +87,18 @@ test('a kit file <chessId>-<codename>.js registers the kit of <chessId>_a (coden
   }
 });
 
-test('the registry is the tier groups in KIT_FILES order, then the stand-ins, then the 自选 operators, one key per file; content/index.js serves the same object', () => {
+test('the registry is the tier groups in KIT_FILES order, then the stand-ins, then the 自选 operators, one key per file; content/index.js preserves every original builder and adds only explicit Rhine kits', () => {
   assert.deepEqual(Object.keys(KITS), [...TIER_KITS.flatMap((t) => Object.keys(t)), ...Object.keys(STANDIN_KITS), ...Object.keys(OPERATOR_KITS)]);
   assert.equal(Object.keys(KITS).length, KIT_FILES.flat().length + STANDIN_KIT_FILES.length + OPERATOR_KIT_FILES.length, 'one key per file, none twice');
-  assert.equal(CONTENT_KITS, KITS);
+  const extensions = ['chess_rhine_aphris_a', 'chess_rhine_astgenne_a', 'chess_rhine_dorothy_a', 'chess_rhine_ifrit_a', 'chess_rhine_mayer_a'];
+  assert.deepEqual(Object.keys(RHINE_KITS).sort(), extensions);
+  assert.ok(Object.isFrozen(CONTENT_KITS));
+  assert.deepEqual(Object.keys(CONTENT_KITS), [...Object.keys(KITS), ...Object.keys(RHINE_KITS)]);
+  for (const [key, builder] of Object.entries(KITS)) assert.equal(CONTENT_KITS[key], builder, `${key}: original kit identity`);
+  for (const key of extensions) {
+    assert.ok(!Object.hasOwn(KITS, key), `${key}: extension never replaces an original kit`);
+    assert.equal(CONTENT_KITS[key], RHINE_KITS[key], `${key}: authored extension identity`);
+  }
 });
 
 test('kit files stay browser-safe and deterministic: no Node-only or server-only import, no clock, no Math.random', () => {

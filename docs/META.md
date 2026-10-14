@@ -4,7 +4,7 @@ Audience: **content authors** writing prep-side ("SERVER_*") effects in `server/
 the **UI owner** consuming `m.public` / `m.private` / `m.result`, and anyone driving matches in tests or tools.
 Normative contracts stay in DESIGN.md §6 and §8 ([design/match.md](design/match.md),
 [design/network.md](design/network.md)); this file documents the implementation and every assumption it makes.
-[Local extension 0.2.2-local.1](history/0.2.2-local.1.md) (DESIGN §28) adds 4–8-capacity rooms and lobby-routed text chat. The match freezes its shared pool using actual occupied seats; >4 alive players receive up to ten legal special-draft slots. Per-player Boss HP and hidden-core thresholds scale to eight, with the hidden gate freezing alive count when Boss prep ends. Four-player/solo rules and per-field Boss pairing/report limits stay unchanged. `b.progress.left` is party-wide source-leaker data and accepts up to eight keys; `perPlayer` remains per field. The room owns chat so elimination does not disable it, while leaving does.
+[Local extension 0.2.2-local.1](history/0.2.2-local.1.md) (DESIGN §31) adds 4–8-capacity rooms and lobby-routed text chat. The match freezes its shared pool using actual occupied seats; >4 alive players receive up to ten legal special-draft slots. Per-player Boss HP and hidden-core thresholds scale to eight, with the hidden gate freezing alive count when Boss prep ends. Four-player/solo rules and per-field Boss pairing/report limits stay unchanged. `b.progress.left` is party-wide source-leaker data and accepts up to eight keys; `perPlayer` remains per field. The room owns chat so elimination does not disable it, while leaving does.
 
 ```
 server/match/

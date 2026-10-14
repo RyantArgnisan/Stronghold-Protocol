@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {TestClient} from '../helpers/wsClient.js';
 import {loadBrowserSim} from '../../public/js/battle/runner.js';
+if (process.env.SP_RHINE_SMOKE !== '1') process.exit(0);
 const base=process.env.SP_URL;if(!base)throw Error('SP_URL required');
 const cs=[],checks=[];const mark=x=>{checks.push(x);console.log('PASS',x);};
 async function connect(name){const c=await TestClient.connect(base.replace('http','ws')+'/ws');cs.push(c);await c.hello(name);return c;}
