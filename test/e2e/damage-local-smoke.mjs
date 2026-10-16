@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { TestClient } from '../helpers/wsClient.js';
+if (process.env.SP_DAMAGE_SMOKE !== '1') process.exit(0);
 const base = process.env.SP_URL; if (!base) throw new Error('SP_URL required');
 const clients = [], checks = []; const mark = (x) => { checks.push(x); console.log('PASS', x); };
 const connect = async (name, token) => { const c = await TestClient.connect(base.replace(/^http/, 'ws') + '/ws'); clients.push(c); const welcome = await c.hello(name, token); return { c, welcome }; };

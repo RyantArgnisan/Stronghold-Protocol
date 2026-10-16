@@ -10,8 +10,35 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ERR, PHASE, EMOTES } from '../../shared/constants.js';
 import { makeMatch } from './harness.js';
+import { DamageLedger } from '../../server/match/damageBoard.js';
 
 const S = 's_spec';
+
+test('battle inputs expose only deployed research devices, never reserve pieces or private research progress', () => {
+  const h = makeMatch({ humans: 2, seed: 9310 });
+  try {
+    const ps = h.ps('p_0');
+    ps.bonds.rhineShip = { active: true, count: 6 };
+    ps.research.unlocked = true;
+    ps.research.points.medical = 4;
+    ps.research.stages.medical = 1;
+    const deployed = ps.newPiece('token', 'token_rhine_medical', { research: true, researchKey: 'medical', ownerUid: null });
+    const reserve = ps.newPiece('token', 'token_rhine_energy', { research: true, researchKey: 'energy', ownerUid: null });
+    ps.board.set('5,10', deployed);
+    ps.research.hand[1] = reserve;
+    assert.ok(ps.researchView().hand.some((p) => p?.uid === reserve.uid), 'owner keeps its reserve');
+    const input = ps.battleInput();
+    assert.ok(!Object.hasOwn(input.research, 'hand'), 'no private reserve in any replica input');
+    assert.deepEqual(input.research, { active: true, devices: [{ key: 'medical', tokenId: 'token_rhine_medical', uid: deployed.uid, stage: 1, onBoard: true }] });
+    assert.ok(!JSON.stringify(input).includes(reserve.uid), 'reserve identity does not leak via device metadata');
+    assert.equal(ps.research.points.medical, 4, 'building a replica does not mutate private progress');
+    const f = { spec: { players: [{ ...input, contentInfo: { funds: 99, handUnits: 2 } }] } };
+    const watched = h.m._spectatorSpec(f);
+    assert.deepEqual(privateKeys(watched), []);
+    assert.deepEqual(watched.players[0].research, input.research, 'spectators preserve all battle-affecting device data');
+    assert.equal(f.spec.players[0].contentInfo.funds, 99, 'redaction leaves authoritative input untouched');
+  } finally { h.m.dispose(); }
+});
 /** Keys only the private player view carries (DESIGN §8.3 m.private): none may reach a spectator, at any depth. */
 const PRIVATE_KEYS = new Set(['funds', 'pendingFunds', 'hand', 'temp', 'shop', 'canReady', 'rewardOffer', 'freeRefreshes', 'loadout']);
 function privateKeys(v, path = '', out = []) {
@@ -31,6 +58,44 @@ const REFUSED = [
   { t: 'g.emote', id: EMOTES[0] }, { t: 'g.autoplay', on: true }, { t: 'g.unitStats', seq: 1 }, { t: 'g.choice', idx: 0 },
   { t: 'g.band', bandId: 'band_bldsk' }, { t: 'b.progress', battleId: 'x', gt: 1, killed: 0, total: 1 },
 ];
+
+test('spectator damage telemetry is public only for the authorized viewed seats and changes scope immediately', () => {
+  const h = makeMatch({ humans: 3, seed: 9311, spectators: [S] });
+  try {
+    const m = h.m;
+    m.round = 1;
+    m.damageLedger = new DamageLedger();
+    m.damageLedger.replace(1, 'fixture', { rows: ['p_0', 'p_1', 'p_2'].map((ownerId) => ({
+      ownerId, defId: 'fixture_op', name: 'fixture', kind: 'op', damage: 10, summonDamage: 2,
+    })), truncated: false });
+    m.fields = [{ fieldId: 'pair', players: ['p_0', 'p_1'] }, { fieldId: 'other', players: ['p_2'] }];
+    m.watchers.set(S, 'pair');
+    m.watchPref.set(S, 'p_1');
+    m._flushDamage(true, S);
+    const pair = h.lastTo(S, 'm.damage');
+    assert.equal(pair.fieldId, 'pair');
+    assert.equal(pair.ownerId, 'p_1');
+    assert.deepEqual(pair.peers.map((p) => p.ownerId), ['p_0']);
+    for (const view of [pair, ...pair.peers]) {
+      assert.equal(view.total.length, 1);
+      assert.equal(view.current.length, 1);
+      assert.ok([...view.total, ...view.current].every((row) => row.ownerId === view.ownerId));
+      assert.deepEqual(privateKeys(view), []);
+    }
+    assert.ok(!JSON.stringify(pair).includes('p_2'), 'never expose an unwatched seat');
+    m.watchers.set(S, 'other'); // stale watchPref must never authorize the old field
+    m._flushDamage(true, S);
+    const other = h.lastTo(S, 'm.damage');
+    assert.equal(other.ownerId, 'p_2');
+    assert.deepEqual(other.peers, []);
+    assert.ok(!JSON.stringify(other).includes('p_1'));
+    m.watchers.delete(S);
+    m._flushDamage(true, S);
+    const none = h.lastTo(S, 'm.damage');
+    assert.equal(none.ownerId, null);
+    assert.deepEqual([none.total, none.current, none.peers], [[], [], []], 'no watched seat means no player telemetry');
+  } finally { h.m.fields = []; h.m.dispose(); }
+});
 
 test('a spectator seat watches a whole match (各自行动, 联防, 最终攻势, settlement) like an eliminated player — never a private view', () => {
   const h = makeMatch({
@@ -55,7 +120,7 @@ test('a spectator seat watches a whole match (各自行动, 联防, 最终攻势
   assert.equal(end.victory, true);
 
   const got = frames(h, S);
-  for (const x of got) assert.ok(['m.public', 'm.field', 'b.start', 'b.end', 'm.result'].includes(x.t), `${x.t} sent to a spectator`);
+  for (const x of got) assert.ok(['m.public', 'm.field', 'b.start', 'b.end', 'm.result', 'm.damage'].includes(x.t), `${x.t} sent to a spectator`);
   assert.equal(h.allTo(S, 'm.private').length, 0, 'no private player view');
   const starts = h.allTo(S, 'b.start');
   assert.ok(starts.length > 0);

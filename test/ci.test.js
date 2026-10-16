@@ -53,6 +53,10 @@ test('the commands match ci.yml: the run lines, the npm scripts ci.yml calls, th
     if (l.npm) {
       assert.equal(r, `npm run ${l.npm}`, l.id);
       assert.equal(pkg.scripts[l.npm], l.describe, `package.json script ${l.npm} is what ${l.id} runs`);
+    } else if (l.id === 'test') {
+      // CI partitions the same discovery into complementary shards; the local runner executes the complete suite.
+      assert.equal(l.describe, 'node --test');
+      assert.equal(r, 'node --test --test-shard=${{ matrix.shard }}/4');
     } else if (l.id !== 'smoke') assert.equal(r, l.describe, l.id);
   }
   const smokeRun = run('test', STEPS.find((s) => s.id === 'smoke').ci.name);

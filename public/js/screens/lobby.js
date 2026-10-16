@@ -241,7 +241,7 @@ function DifficultyCard({ roomMode, difficulty, selected, onSelect }) {
 }
 
 export function RosterPicker({enabled=false,onChange,disabled=false}) {
- return html`<div class="roster-picker" role="group" aria-label="干员范围">
+ return html`<div class="roster-picker" role="group" aria-label=${t('干员范围')}>
   <button type="button" class=${`dpick__opt${enabled?'':' is-active'}`} disabled=${disabled} aria-pressed=${!enabled} onClick=${()=>onChange(false)}>${t('原版干员')}</button>
   <button type="button" class=${`dpick__opt${enabled?' is-active':''}`} disabled=${disabled} aria-pressed=${enabled} onClick=${()=>onChange(true)}>${t('追加莱茵生命')}</button>
  </div>`;

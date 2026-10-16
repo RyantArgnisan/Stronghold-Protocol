@@ -9,7 +9,7 @@
 //
 // Steps, in the order of ci.yml (job `test`, then job `tooling`):
 //   setup      node tools/setup.mjs --check --no-local
-//   test       node --test
+//   test       node --test (CI runs complementary 1/4..4/4 shards; this local runner keeps full discovery)
 //   smoke      the server on a free port on 127.0.0.1: GET /healthz, / (must contain <html) and /vendor/pixi.min.js,
 //              then node tools/doctor.mjs (its exit code is ignored, like `|| true` in ci.yml), then the server stops
 //   lint       eslint .                                   (npm run lint; warnings do not fail it)

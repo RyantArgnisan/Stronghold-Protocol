@@ -5,6 +5,22 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { startServer } from '../server/index.js';
 
+test('Windows persistence skips unsupported directory descriptors but POSIX sync errors remain fatal', async () => {
+  const { syncCloudSaveDirectory } = await import('../server/cloudSave.js');
+  assert.equal(typeof syncCloudSaveDirectory, 'function');
+  let opened = 0, synced = 0, closed = 0;
+  const openDirectory = async () => { opened++; return { sync: async () => { synced++; }, close: async () => { closed++; } }; };
+  await syncCloudSaveDirectory('fixture', { platform: 'win32', openDirectory });
+  assert.equal(opened, 0, 'Windows must not open a directory as a regular file');
+  await syncCloudSaveDirectory('fixture', { platform: 'linux', openDirectory });
+  assert.deepEqual([opened, synced, closed], [1, 1, 1]);
+  await assert.rejects(syncCloudSaveDirectory('fixture', { platform: 'linux', openDirectory: async () => ({
+    sync: async () => { throw new Error('fixture sync failure'); }, close: async () => { closed++; },
+  }) }), /fixture sync failure/);
+  assert.equal(closed, 2, 'close even when directory fsync fails');
+  await assert.rejects(syncCloudSaveDirectory('fixture', { platform: 'linux', openDirectory: async () => { throw new Error('fixture open failure'); } }), /fixture open failure/);
+});
+
 const payload = () => ({ v: 1, stats: { v: 1, records: [] }, operators: { loadout: { v: 1, entries: {}, ops: {} }, skins: { v: 1, skins: {} } } });
 // Disposable fixture only. Never use player credentials in tests or evidence.
 const credentials = () => ({ name: '云存档测试/../博士', password: 'synthetic-fixture-only-!93' });

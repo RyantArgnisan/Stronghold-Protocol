@@ -20,9 +20,23 @@ test('damage table defaults to match totals, collapses accessibly, switches roun
   assert.equal(nodes(mod.DamageView({ packet, ownerId: 'p1', open: false }), (v) => v.type === 'table').length, 0);
   assert.equal(nodes(mod.DamageView({ packet, ownerId: 'p2', open: true }), (v) => v.type === 'td').length, 0, 'no cached unrelated owner');
 });
-test('damage panel is mounted only on battlefield and bounded above communication, with pass-through outside its footprint', () => {
+test('damage panel flows below ready controls in the right HUD column, with pass-through outside its footprint', () => {
   const game = readFileSync(new URL('../../public/js/screens/game.js', import.meta.url), 'utf8');
-  assert.match(game, /<\$\{DamageBoard\} ownerId=\$\{strip.ownerId\}/);
+  assert.match(game, /damagePanel=\$\{html`<\$\{DamageBoard\} ownerId=\$\{strip.ownerId\}/);
+  assert.equal([...game.matchAll(/<\$\{DamageBoard\}/g)].length, 1, 'one panel instance');
+  const hud = readFileSync(new URL('../../public/js/ui/hud.js', import.meta.url), 'utf8');
+  const right = hud.slice(hud.indexOf('<div class="gtop__right">'));
+  assert.ok(right.indexOf('<${ReadyToggle}') >= 0);
+  assert.ok(right.indexOf('${damagePanel}') > right.indexOf('<${ReadyToggle}'), 'shared right column keeps the panel after ready');
   const css = readFileSync(new URL('../../public/css/screens/damage-board.css', import.meta.url), 'utf8');
-  assert.match(css, /pointer-events: none/); assert.match(css, /overflow-y: auto/); assert.match(css, /bottom: calc\(max\(\.24rem/);
+  assert.match(css, /pointer-events: none/); assert.match(css, /overflow-y: auto/);
+  assert.match(css, /\.damage-board\s*\{[^}]*position: relative/);
+  const detachedOverlay = /(?:^|[;{])\s*(?:bottom\s*:|position\s*:\s*(?:fixed|absolute)\b)/;
+  assert.doesNotMatch('.panel { border-bottom: 1px solid; position: relative; }', detachedOverlay, 'border-bottom is not bottom');
+  for (const declaration of ['bottom: 0', 'position: fixed', 'position: absolute']) {
+    assert.match(`.panel { ${declaration}; }`, detachedOverlay, `detect ${declaration}`);
+    assert.match(`border: 0; ${declaration}`, detachedOverlay, `detect after semicolon: ${declaration}`);
+    assert.match(declaration, detachedOverlay, `detect at start: ${declaration}`);
+  }
+  assert.doesNotMatch(css, detachedOverlay, 'no detached corner overlay');
 });

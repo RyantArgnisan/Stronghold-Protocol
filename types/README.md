@@ -4,9 +4,9 @@
 
 The first slice is the closed set that already typechecks:
 
-- `shared/` except `shared/protocol.js` and `shared/bandBonds.js` (their JSDoc does not match the code yet; see below)
-- `server/sim/rng.js`, `server/sim/dir.js`, `server/sim/constants.js` (the last imports `GEO` from shared)
-- `types/` — JSDoc for `Unit`, `DamageInfo`, the snapshot tuples, and the protocol message envelope
+- `shared/` except `shared/bandBonds.js`; `shared/protocol.js` is checked too, including its imported cloud-save validators.
+- `server/sim/rng.js`, `server/sim/detmath.js`, `server/sim/dir.js`, `server/sim/constants.js` (the last imports `GEO` from shared)
+- `types/` — JSDoc for `Unit`, `DamageInfo`, the snapshot tuples, and the protocol message envelope; `web-globals.d.ts` declares only the shared UTF-8 `TextEncoder`, without enabling all browser or Node globals
 
 `strict` is off. `tsc` does not read `jsconfig.json` on its own; the script passes `-p`.
 
@@ -18,8 +18,10 @@ Suggested order once the sim split settles: `server/sim/grid.js`, `server/sim/bo
 
 `types/core.js` follows docs/DESIGN.md §5.2, §5.4, §8 and docs/SIM.md §4, §9. Where those two disagree on `DamageInfo.type`, the typedef uses the union `makeDamageInfo` actually builds (`'elemental'` as well as `'element'`).
 
-## Not in the first slice
+## Protocol catalogue
 
-`shared/protocol.js` — the catalogue JSDoc is ahead of a few object literals (`$optional` sits on a `Record` of checkers; `unitStatsEntry` does not list `side` or `silenced`, and the code reads `side`). Fix the comments, then remove it from `exclude`.
+`shared/protocol.js` declares checker functions separately from the `$optional` metadata array. The validator skips that metadata before calling a checker; its local type assertion records this invariant. `unitStatsEntry` lists the actual cultivation, side, range and silence fields, and normalised loadout maps have explicit record types. These changes do not loosen runtime validation.
+
+## Not in the first slice
 
 `shared/bandBonds.js` — the data-shape JSDoc rejects an empty fallback object and a tuple callback. Same treatment.

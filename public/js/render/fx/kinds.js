@@ -90,6 +90,16 @@ export const FX_KINDS = Object.freeze({
   // bonds / garrisons (support/index.js fxOn)
   bondMilestone: { a: 'buff', c: 0xffc600 }, bondProc: { a: 'buff', c: 0x4ed8af }, bondShare: { a: 'wave', c: 0x4ed8af },
   garrison: { a: 'buff', c: 0x4ed8af }, layer: { a: 'buff', c: 0xffe066 }, sp: { a: 'sp', c: 0x6fd3ff },
+  // Local Rhine additions use the existing visual archetypes [ASSUMED placeholders, not official game art].
+  burn: { a: 'buff', c: 0xff6a2a },
+  dorothyChain: { a: 'beam', c: 0xffd45a, pt: true },
+  dorothyTrap: { a: 'blast', c: 0xffd45a, pt: true },
+  dorothyCritical: { a: 'crit', c: 0xffe066 },
+  // Model-only form changes are applied by app.js fxForm / UnitView, not drawn as an extra particle.
+  form: { a: 'none', c: 0xffffff },
+  // app.js routes these to RhineDeviceView.onResearchFx (rhineDevices.js): avoid duplicate generic particles.
+  rhineEcology: { a: 'none', c: 0x62f08a }, rhineHeal: { a: 'none', c: 0x62f08a },
+  rhinePulse: { a: 'none', c: 0x6fd3ff }, rhineLaser: { a: 'none', c: 0xff6a2a },
 });
 
 /** Keyword guesses for kinds added later (checked in order), before the generic sparkle. */

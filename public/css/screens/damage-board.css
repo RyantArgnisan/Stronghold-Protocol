@@ -14,5 +14,5 @@
 .damage-board th:last-child, .damage-board td:last-child { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .damage-board td small { display: block; color: var(--text-lo); }
 .damage-board__note { display: block; padding: 4px 7px; font-size: 10px; color: var(--text-lo); }
-.gm:has(.detail-panel) .damage-board { visibility: hidden; }
+.gm.has-detail .damage-board { visibility: hidden; }
 @media (max-width: 700px), (max-height: 500px) { .damage-board { width: min(190px, 31vw); font-size: 11px; } .damage-board__scroll { max-height: 14dvh; } .damage-board__note { max-height: 28px; overflow-y: auto; } }
