@@ -14,8 +14,8 @@ const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 const pkg = JSON.parse(read('package.json'));
 const lock = JSON.parse(read('package-lock.json'));
 
-test('v025 integration has its distinct local build version', () => {
-  assert.equal(APP_VERSION, '0.2.5-local.1');
+test('v030 integration has its distinct local build version', () => {
+  assert.equal(APP_VERSION, '0.3.0-local.1');
 });
 
 test('one release version: package.json, package-lock.json and APP_VERSION', () => {

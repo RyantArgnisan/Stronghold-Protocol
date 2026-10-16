@@ -31,9 +31,9 @@ test('authenticated cloud refresh merges on demand without local loss, history u
  assert.deepEqual(records.map(r => r.id), ['cloud', 'local']);
  assert.deepEqual(records[1], local, 'existing local duplicate wins without normalization loss');
  const before = s.getItem('sp.pref.stats'); await cloud.mergeCloudStats(incoming, s); assert.equal(s.getItem('sp.pref.stats'), before);
- s.setItem('sp.pref.stats', JSON.stringify({ v: 2, records: [] }));
+ s.setItem('sp.pref.stats', JSON.stringify({ v: 3, records: [] }));
  await assert.rejects(cloud.mergeCloudStats(incoming, s), /INVALID/);
- assert.equal(JSON.parse(s.getItem('sp.pref.stats')).v, 2);
+ assert.equal(JSON.parse(s.getItem('sp.pref.stats')).v, 3);
 });
 test('controller refresh reads cloud even when automatic upload is off and drops stale identity responses', async () => {
  const s = storage(); let identity = { name: 'fixture', key: 'p' }, resolve;

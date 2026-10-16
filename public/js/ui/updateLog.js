@@ -3,12 +3,14 @@ import { useEffect, useState } from '../../vendor/hooks.module.js';
 import { html, Button, Modal } from './components.js';
 import { useStore, store, selectRoute } from '../store.js';
 import { net } from '../net.js';
+import { APP_VERSION } from '../../../shared/constants.js';
 import { t, N_ } from '../../../shared/i18n.js';
 
-export const UPDATE_ID = 'local-2026-10-13-entry-log-1';
-export const UPDATE_DATE = '2026-10-13';
+export const UPDATE_ID = 'local-2026-10-16-v030-1';
+export const UPDATE_DATE = '2026-10-16';
 const seen = new Set(); // storage denied: still show once per document
 const NOTES = [
+  N_('已整合官方 v0.3.0，保留本机八人、聊天、皮肤、追加莱茵、伤害记录与云存档；脚本插件保持关闭。'),
   N_('大厅新增更新日志入口；进入后自动展示，同一浏览器已看过本次更新后不再自动弹出。'),
   N_('主页新增统计数据入口，并显示在线真人与房间数量；房间和战斗中不显示此计数。'),
   N_('自动上传开关与启用时间保存在服务器；刷新可凭有效令牌恢复，换浏览器需验证原恢复密码。'),
@@ -50,7 +52,7 @@ export function UpdateLogEntry({ updateId = UPDATE_ID, delay = 1500 } = {}) {
     <${Modal} open=${open && ready} title=${t('更新日志')} micro="LOCAL UPDATE" width="min(6.4rem, 94vw)"
       onClose=${() => setOpen(false)} actions=${html`<${Button} data-testid="update-log-close" variant="primary" onClick=${() => setOpen(false)}>${t('关闭')}<//>`}>
       <p class="t-lo">${UPDATE_DATE} · ${t('本地更新')} <span class="num">${updateId}</span></p>
-      <p class="t-dim">${t('应用版本仍为 0.2.5-local.1；此编号仅标识本地更新，不是上游发行版本。')}</p>
+      <p class="t-dim">${APP_VERSION}</p>
       <ul style="padding-left:.22rem;line-height:1.8">${NOTES.map(note => html`<li key=${note}>${t(note)}</li>`)}</ul>
     <//>`;
 }

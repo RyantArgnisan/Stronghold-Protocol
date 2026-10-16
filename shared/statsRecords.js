@@ -1,5 +1,5 @@
 // Shared strict record normalization, dedupe and storage budgets (browser/server).
-export const STATS_VERSION = 1;
+export const STATS_VERSION = 2;
 export const MAX_RECORDS = 1000;
 export const FULL_KEEP = 30;
 export const MAX_CHARS = 800_000;
@@ -74,6 +74,7 @@ function normalizePlayerRow(raw, quit = false) {
     alive: bool(p.alive, true),
     victory: bool(p.victory), // server semantics: team won AND this player was still in at the end
     roundsPassed: quit ? num(p.roundsPassed) : int(p.roundsPassed, 0),
+    ...(Number.isInteger(p.creditedKills) && p.creditedKills >= 0 && p.creditedKills <= 1e9 ? { creditedKills: p.creditedKills } : {}),
     eliminatedRound: num(p.eliminatedRound),
     lp: num(p.lp),
     bandId: str(p.bandId),
@@ -82,6 +83,7 @@ function normalizePlayerRow(raw, quit = false) {
     reward: int(p.reward, 0),
     lineup,
     bonds,
+    ...(Array.isArray(p.usedBondIds) ? { usedBondIds: usedBondIdsOf(p) } : {}),
     stats: normalizeStatBlock(p.stats),
   };
 }
@@ -121,25 +123,34 @@ export function normalizeRecord(raw) {
     teamLp: num(r.teamLp),
     roomMode: r.roomMode === 'solo' || r.roomMode === 'coop' ? r.roomMode : null,
     selfId: str(r.selfId),
+    // the room's cosmetic plugins (see the header): its visual set, null without any (or a record from before 0.3.0)
+    vs: vsOf(r.vs),
+    // the room's gameplay plugins (see the header): its content set, null for the original game
+    content: contentOf(r.content),
     players,
   };
   if (r.compact === true) rec.compact = true;
-  // an id-less (hand-made) record gets a content id, so both copies of it land on the same key
-  if (!rec.id) rec.id = `c.${fnv1a(JSON.stringify(rec))}`;
+  // an id-less (hand-made) record gets a content id, so both copies of it land on the same key (`vs` and `content` left
+  // out: the id of a record from before 0.3.0 stays the same)
+  if (!rec.id) rec.id = `c.${fnv1a(JSON.stringify({ ...rec, vs: undefined, content: undefined }))}`;
   return rec;
 }
 
 const COMPACT_FRAME = ['id', 'v', 't', 'end', 'victory', 'roundsPassed', 'lastRound', 'hiddenReached', 'hiddenCleared', 'reason', 'modeId',
-  'difficulty', 'roomMode', 'durationMs', 'selfId'];
+  'difficulty', 'roomMode', 'durationMs', 'selfId', 'vs', 'content'];
 
 export function compactRecord(rec) {
   const self = selfRowOf(rec);
+  const usedBondIds = usedBondIdsOf(self);
   const out = {};
   for (const k of COMPACT_FRAME) if (rec[k] != null) out[k] = rec[k];
   out.compact = true;
   out.players = self ? [{
     playerId: self.playerId, seat: self.seat, alive: self.alive, victory: self.victory, roundsPassed: self.roundsPassed,
     eliminatedRound: self.eliminatedRound, bandId: self.bandId, title: self.title, left: self.left, stats: self.stats,
+    trophies: self.trophies,
+    ...(usedBondIds.length ? { usedBondIds } : {}),
+    ...(self.creditedKills != null ? { creditedKills: self.creditedKills } : {}),
   }] : [];
   return out;
 }
@@ -154,8 +165,9 @@ export function compactRecord(rec) {
 export function fitToBudget(records, maxChars = MAX_CHARS) {
   const kept = [];
   let used = 40; // the envelope itself
+  const peakId = highestBondRecord(records.slice(0, MAX_RECORDS))?.record.id;
   records.slice(0, MAX_RECORDS).forEach((r, i) => {
-    const rec = i < FULL_KEEP ? r : compactRecord(r);
+    const rec = i < FULL_KEEP || r.id === peakId ? r : compactRecord(r);
     const n = JSON.stringify(rec).length + 1;
     if (kept.length && used + n > maxChars) return;
     used += n;
@@ -183,3 +195,29 @@ export function mergeStats(a, b) {
   return { v: STATS_VERSION, records };
 }
 
+
+const vsOf = (v) => (typeof v === 'string' && /^[0-9a-f]{64}$/.test(v) ? v : null);
+export function contentOf(c) {
+  if (!isObj(c) || c.vanilla === true || !vsOf(c.cs)) return null;
+  const list = (Array.isArray(c.plugins) ? c.plugins : [])
+    .map((p) => (typeof p === 'string' ? p : isObj(p) && typeof p.id === 'string' ? `${p.id}@${typeof p.version === 'string' ? p.version : '?'}` : null))
+    .filter((x) => typeof x === 'string' && x.length <= 80).slice(0, 32);
+  return { cs: c.cs, plugins: list };
+}
+export function usedBondIdsOf(player) {
+  const ids = Array.isArray(player?.usedBondIds) ? player.usedBondIds
+    : (Array.isArray(player?.bonds) ? player.bonds : []).filter((b) => b?.active === true).map((b) => b.bondId);
+  return [...new Set(ids.filter((id) => typeof id === 'string' && id.length).map((id) => id.slice(0, 64)))].slice(0, MAX_BONDS);
+}
+export function highestBondRecord(records) {
+  let best = null;
+  for (const record of records) {
+    if (record.end === 'quit' || record.compact) continue;
+    const player = selfRowOf(record);
+    for (const bond of player?.bonds || []) {
+      if (!bond.active || !Number.isFinite(bond.layers) || bond.layers <= 0) continue;
+      if (!best || bond.layers > best.bond.layers) best = { record, player, bond };
+    }
+  }
+  return best;
+}

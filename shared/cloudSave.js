@@ -23,9 +23,9 @@ export function validCloudPayload(p) {
   if (new TextEncoder().encode(JSON.stringify(p)).length > CLOUD_MAX_BYTES - 1024) return false;
   if (p.stats) {
     const s = p.stats;
-    if (!keys(s, ['v', 'records']) || s.v !== 1 || !Array.isArray(s.records) || s.records.length > 1000) return false;
-    const allowed = ['id','v','t','end','victory','roundsPassed','lastRound','hiddenReached','hiddenCleared','reason','modeId','difficulty','stageId','bossId','hiddenBossId','seed','durationMs','teamLp','roomMode','selfId','players','compact'];
-    if (!s.records.every((r) => keys(r, allowed) && typeof r.id === 'string' && r.id.length > 0 && r.id.length <= 64 && (r.v === undefined || r.v === 1) && Array.isArray(r.players) && r.players.length > 0 && r.players.length <= 8 && r.players.every((x) => object(x) && (!x.lineup || Array.isArray(x.lineup) && x.lineup.length <= 12) && (!x.bonds || Array.isArray(x.bonds) && x.bonds.length <= 24)))) return false;
+    if (!keys(s, ['v', 'records']) || ![1,2].includes(s.v) || !Array.isArray(s.records) || s.records.length > 1000) return false;
+    const allowed = ['id','v','t','end','victory','roundsPassed','lastRound','hiddenReached','hiddenCleared','reason','modeId','difficulty','stageId','bossId','hiddenBossId','seed','durationMs','teamLp','roomMode','selfId','players','compact','vs','content'];
+    if (!s.records.every((r) => keys(r, allowed) && typeof r.id === 'string' && r.id.length > 0 && r.id.length <= 64 && (r.v === undefined || r.v === 1 || r.v === 2) && Array.isArray(r.players) && r.players.length > 0 && r.players.length <= 8 && r.players.every((x) => object(x) && (!x.lineup || Array.isArray(x.lineup) && x.lineup.length <= 12) && (!x.bonds || Array.isArray(x.bonds) && x.bonds.length <= 24)))) return false;
   }
   if (p.operators) {
     const o = p.operators, l = o.loadout, s = o.skins;

@@ -86,3 +86,6 @@
   .rcard__head { grid-template-columns: auto minmax(0, 1fr) auto; gap: .1rem; }
   .rcard__mid, .rcard__title { grid-column: 1 / -1; }
 }
+
+/* a match with gameplay plugins (DESIGN §32.6): the unofficial mark under the headline */
+.result__modmark { align-self: flex-start; margin-top: .06rem; }

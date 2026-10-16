@@ -211,7 +211,11 @@ export class BattlePlayers {
   _setupUnit(u,kit=null){return withGameData(this.data,()=>this._setupUnitScoped(u,kit));}
   _setupUnitScoped(u, kit = null) {
     if (!kit) {
-      try { kit = setupUnitKit(this, u, this.contentMode); } catch (e) { this._internalError('setupUnitKit', e); kit = null; }
+      try { kit = setupUnitKit(this, u, this.contentMode); } catch (e) {
+        if (e?.contentFault || this.contentFault) throw e;
+        this._internalError('setupUnitKit', e);
+        kit = null;
+      }
     }
     u.kit = kit || {};
     u.profile = resolveProfile(u.def, u.kit.trait || null);
